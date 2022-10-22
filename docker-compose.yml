@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+
+  app:
+    build: .
+    command: sh -c "uvicorn app.main:app --host 0.0.0.0 --reload"
+    ports:
+      - 5280:8000
+    volumes:
+      - ${PWD}/app:/app/app
+    

@@ -1,10 +1,11 @@
 from cgitb import reset
 import string
-from fastapi import FastAPI
+from fastapi import FastAPI, File
 import httpx
 import boto3
 from botocore.exceptions import NoCredentialsError
 from dotenv import load_dotenv
+from datetime import datetime
 import os
 app = FastAPI()
 
@@ -15,17 +16,21 @@ async def root():
     return {"message": "Hello Bigger Applications!"}
 
 # 送信跟建立事件
-@app.get('/api/v1/send_email')
-async def send_email():
+@app.post('/api/v1/alert')
+async def send_email(rfid: str = '', file: bytes = File(...)):
     # get in request
-    rfid = 'DADAFACE'
-    date = '2022-10-22T15:27:24.195Z'
-    image = ''
+    date = datetime.now()
+    image = file
     device_id = "pi"
 
+    with open('tmp.img', 'wb') as f:
+        f.write(file)
+
+    image = 'tmp.img'
+
     # uploaded = upload_to_aws('app/image/test.jpg', '2022tsmc-hackathon', 'output_test123.jpg')
-    upload_to_aws(image, '2022tsmc-hackathon', '{}-{}.jpg'.format(date,device_id))
-    image_url = 'https://2022tsmc-hackathon.s3-ap-northeast-1.amazonaws.com/{}-{}.jpg'.format(date,device_id)
+    upload_to_aws(image, '2022tsmc-hackathon', '{}-{}.jpg'.format(date.isoformat(),device_id))
+    image_url = 'https://2022tsmc-hackathon.s3-ap-northeast-1.amazonaws.com/{}-{}.jpg'.format(date.isoformat(),device_id)
     print(image_url)
 
     user_email : string
@@ -33,27 +38,32 @@ async def send_email():
     load_dotenv()
     API_BASE_USER = os.getenv('API_BASE_USER')
     API_BASE_EVENT = os.getenv('API_BASE_EVENT')
-
-    r = httpx.get(API_BASE_USER+'user/rfid/'+rfid)
-    uid = (r.json()['detail']['uid'])
-    user_email = (r.json()['detail']['email'])
-    print(uid,user_email)
+    API_BASE_ROCKET = os.getenv('API_BASE_ROCKET')
 
     data={
-        "uid": uid,
-        "result": "denied",
-        "time": date,
+        "uid": '-1',
+        "result": "red",
+        "time": date.isoformat(),
         "url": image_url
     }
+
+
+    if not rfid == '':
+        r = httpx.get(API_BASE_USER+'user/rfid/'+rfid)
+        uid = (r.json()['detail']['uid'])
+        user_email = (r.json()['detail']['email'])
+        print(f"Finish getting user status with result {uid = }, {user_email = }")
+        data.uid = uid
+        data.result = "yellow"
+
+    print(API_BASE_ROCKET + f'alert?time={str(datetime.now()).split(".")[0]}&image={image_url.replace(" ", "%20")}')
+    r = httpx.get(API_BASE_ROCKET + f'alert?time={str(datetime.now()).split(".")[0]}&image={image_url.replace(" ", "%20")}')
+    print(f"Alertbot finish sending with result {r.text = }, {r.status_code = }")
     
     r = httpx.post(API_BASE_EVENT+'event', json=data)
 
-    print(r.text,r.status_code)
-    print(r.json())
+    print(f"Finish creating event with result {r.json() = }, {r.status_code = }")
     return {"message": "ok"}
-
-
-
 
 def upload_to_aws(local_file, bucket, s3_file):
     load_dotenv()

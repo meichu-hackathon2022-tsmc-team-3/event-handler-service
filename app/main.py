@@ -60,7 +60,7 @@ async def send_email(rfid: str = '', file: bytes = File(...)):
     r = httpx.post(API_BASE_EVENT+'event', json=data)
     print(f"Finish creating event with result {r.json() = }, {r.status_code = }")
 
-    r = httpx.get(API_BASE_ROCKET + f'alert?time={str(datetime.now()).split(".")[0]}&image={image_url.replace(" ", "%20")}&event_id={r.json().detail._id}')
+    r = httpx.get(API_BASE_ROCKET + f'alert?time={str(datetime.now()).split(".")[0]}&image={image_url.replace(" ", "%20")}&event_id={r.json()["detail"]["_id"]}')
     print(f"Alertbot finish sending with result {r.text = }, {r.status_code = }")
 
     return {"message": "ok"}

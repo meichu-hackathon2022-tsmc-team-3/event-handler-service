@@ -40,8 +40,9 @@ async def send_email(rfid: str = '', file: bytes = File(...)):
     API_BASE_EVENT = os.getenv('API_BASE_EVENT')
     API_BASE_ROCKET = os.getenv('API_BASE_ROCKET')
 
+    import random
     data={
-        "uid": '-1',
+        "uid": str(random.randint(-3, -1)),
         "result": "red",
         "time": date.isoformat(),
         "url": image_url
@@ -53,8 +54,8 @@ async def send_email(rfid: str = '', file: bytes = File(...)):
         uid = (r.json()['detail']['uid'])
         user_email = (r.json()['detail']['email'])
         print(f"Finish getting user status with result {uid = }, {user_email = }")
-        data.uid = uid
-        data.result = "yellow"
+        data['uid'] = uid
+        data['result'] = "yellow"
 
     print(API_BASE_ROCKET + f'alert?time={str(datetime.now()).split(".")[0]}&image={image_url.replace(" ", "%20")}')
     r = httpx.get(API_BASE_ROCKET + f'alert?time={str(datetime.now()).split(".")[0]}&image={image_url.replace(" ", "%20")}')

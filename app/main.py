@@ -56,14 +56,13 @@ async def send_email(rfid: str = '', file: bytes = File(...)):
         print(f"Finish getting user status with result {uid = }, {user_email = }")
         data['uid'] = uid
         data['result'] = "yellow"
-
-    print(API_BASE_ROCKET + f'alert?time={str(datetime.now()).split(".")[0]}&image={image_url.replace(" ", "%20")}')
-    r = httpx.get(API_BASE_ROCKET + f'alert?time={str(datetime.now()).split(".")[0]}&image={image_url.replace(" ", "%20")}')
-    print(f"Alertbot finish sending with result {r.text = }, {r.status_code = }")
     
     r = httpx.post(API_BASE_EVENT+'event', json=data)
-
     print(f"Finish creating event with result {r.json() = }, {r.status_code = }")
+
+    r = httpx.get(API_BASE_ROCKET + f'alert?time={str(datetime.now()).split(".")[0]}&image={image_url.replace(" ", "%20")}&event_id={r.json().detail._id}')
+    print(f"Alertbot finish sending with result {r.text = }, {r.status_code = }")
+
     return {"message": "ok"}
 
 def upload_to_aws(local_file, bucket, s3_file):

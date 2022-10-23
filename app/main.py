@@ -4,19 +4,14 @@ from fastapi import FastAPI
 import httpx
 import boto3
 from botocore.exceptions import NoCredentialsError
-# from .config import settings
 from dotenv import load_dotenv
 import os
 app = FastAPI()
-
 
 # from .v1 import config
 
 @app.get("/")
 async def root():
-    r = httpx.get('http://event.tsmc.n0b.me/api/v1/event')
-    print(r.status_code)
-    print(r.json())
     return {"message": "Hello Bigger Applications!"}
 
 # 送信跟建立事件
@@ -38,8 +33,8 @@ async def send_email():
     load_dotenv()
     API_BASE_USER = os.getenv('API_BASE_USER')
     API_BASE_EVENT = os.getenv('API_BASE_EVENT')
-    r = httpx.get(API_BASE_USER+'user/rfid/'+rfid)
 
+    r = httpx.get(API_BASE_USER+'user/rfid/'+rfid)
     uid = (r.json()['detail']['uid'])
     user_email = (r.json()['detail']['email'])
     print(uid,user_email)
